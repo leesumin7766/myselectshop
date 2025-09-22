@@ -5,10 +5,15 @@ import com.sparta.myselectshop.dto.ProductRequestDto;
 import com.sparta.myselectshop.dto.ProductResponseDto;
 import com.sparta.myselectshop.entity.Product;
 import com.sparta.myselectshop.entity.User;
+import com.sparta.myselectshop.entity.UserRoleEnum;
 import com.sparta.myselectshop.naver.dto.ItemDto;
 import com.sparta.myselectshop.repository.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -46,15 +51,22 @@ public class ProductService {
 
     }
 
-    public List<ProductResponseDto> getProducts(User user) {
-        List<Product> productList = productRepository.findAllByUser(user);
-        List<ProductResponseDto> responseDtoList = new ArrayList<>();
+    public Page<ProductResponseDto> getProducts(User user, int page, int size, String sortBy, boolean isAsc) {
+        Sort.Direction direction = isAsc ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        for (Product product : productList) {
-            responseDtoList.add(new ProductResponseDto(product));
+        UserRoleEnum userRole = user.getRole();
+
+        Page<Product> productList;
+
+        if (userRole == UserRoleEnum.USER) {
+            productList = productRepository.findAllByUser(user, pageable);
+        } else {
+            productList = productRepository.findAll(pageable);
         }
 
-        return responseDtoList;
+        return productList.map(ProductResponseDto::new);
     }
 
     @Transactional
@@ -64,7 +76,7 @@ public class ProductService {
     );
     product.updateByItemDto(itemDto);
     }
-
+    /*
     public List<ProductResponseDto> getAllProducts() {
         List<Product> productList = productRepository.findAll();
         List<ProductResponseDto> responseDtoList = new ArrayList<>();
@@ -75,4 +87,6 @@ public class ProductService {
 
         return responseDtoList;
     }
+
+     */
 }
