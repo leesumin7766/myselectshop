@@ -1,5 +1,10 @@
 package com.sparta.myselectshop.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.sparta.myselectshop.jwt.JwtUtil;
+import com.sparta.myselectshop.service.KakaoService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ui.Model;
 import com.sparta.myselectshop.dto.SignupRequestDto;
 import com.sparta.myselectshop.dto.UserInfoDto;
@@ -14,10 +19,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -29,6 +31,7 @@ public class UserController {
 
     private final UserService userService;
     private final FolderService folderService;
+    private final KakaoService kakaoService;
 
     @GetMapping("/user/login-page")
     public String loginPage() {
@@ -73,5 +76,16 @@ public class UserController {
         model.addAttribute("folders", folderService.getFolders(userDetails.getUser()));
 
         return "index :: #fragment";
+    }
+
+    @GetMapping("/user/kakao/callback")
+    public String kakaoLogin(@RequestParam String code, HttpServletResponse response) throws JsonProcessingException {
+            String token = kakaoService.kakaoLogin(code);
+
+            Cookie cookie = new Cookie(JwtUtil.AUTHORIZATION_HEADER, token);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+
+            return "redirect:/";
     }
 }
